@@ -1,0 +1,58 @@
+import matplotlib.pyplot as plt
+import numpy as np
+import seaborn as sns
+
+# Set plot style
+plt.style.use('seaborn-whitegrid')
+
+# Model performance data
+models = ['Naive Bayes+TF-IDF', 'SVM+TF-IDF', 'Word2Vec+LSTM', 'BERT']
+accuracy = [0.9512, 0.8443, 0.8281, 0.96]  # Testing accuracy
+inference_time = [2.1, 43.2, 161.7, 110]  # Inference time (sec/1000 articles)
+computational_cost = [1, 20, 77, 50]  # Relative computational cost (normalized)
+
+# Create figure with dual axes
+fig, ax1 = plt.subplots(figsize=(10, 6))
+ax2 = ax1.twinx()
+
+# Color palette
+colors = sns.color_palette("husl", 4)
+
+# Bar plot (Accuracy)
+bars = ax1.bar(models, accuracy, color=colors, alpha=0.6, label='Test Accuracy')
+ax1.set_ylabel('Test Accuracy', fontsize=12)
+ax1.set_ylim(0.7, 1.0)
+
+# Add accuracy value labels
+for bar in bars:
+    height = bar.get_height()
+    ax1.text(bar.get_x() + bar.get_width()/2., height-0.05,
+             f'{height:.2%}', ha='center', va='bottom', fontsize=10)
+
+# Line plots (Computational Efficiency)
+line1 = ax2.plot(models, inference_time, 'o-', color='red', linewidth=2, 
+                 markersize=8, label='Inference Time (s/1k articles)')
+line2 = ax2.plot(models, computational_cost, 's--', color='blue', linewidth=2, 
+                 markersize=8, label='Relative Compute Cost')
+
+# Configure logarithmic scale
+ax2.set_yscale('log')
+ax2.set_ylabel('Computational Efficiency (log scale)', fontsize=12)
+ax2.grid(True, which="both", ls="--", alpha=0.3)
+
+# Combine legends
+lines = [bars, line1[0], line2[0]]
+labels = [l.get_label() for l in lines]
+ax1.legend(lines, labels, loc='upper left', bbox_to_anchor=(0.05, 0.95))
+
+# Title and annotations
+plt.title('Figure 8: Performance vs. Computational Efficiency Comparison\n(Hybrid Framework vs Baseline Models)', 
+          fontsize=14, pad=20)
+plt.figtext(0.5, 0.01, 
+            'Note: The hybrid framework (Naive Bayes+TF-IDF) achieves 95% of BERT accuracy with 98% lower computational cost', 
+            ha='center', fontsize=10, style='italic')
+
+# Adjust layout and save
+plt.tight_layout()
+plt.savefig('figure8_computational_efficiency.png', dpi=300, bbox_inches='tight')
+plt.show()
