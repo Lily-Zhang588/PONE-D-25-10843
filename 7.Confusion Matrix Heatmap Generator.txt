@@ -1,0 +1,105 @@
+# Confusion Matrix Heatmap Generator
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.metrics import confusion_matrix
+
+# ==================== Font Configuration ====================
+plt.rcParams['font.sans-serif'] = ['Arial']  # Set academic-standard font
+plt.rcParams['axes.unicode_minus'] = False   # Fix negative sign display
+
+# ==================== Parameter Settings ====================
+classes = ['Car', 'Finance', 'IT', 'Health', 'Sports',
+           'Tourism', 'Education', 'Military', 'Culture', 
+           'Entertainment', 'Fashion']  # English category labels
+n_samples_per_class = 400  # Samples per class
+output_filename = "Confusion_Matrix_Heatmap.png"  # English output name
+
+# ==================== Data Generation ====================
+np.random.seed(42)
+n_classes = len(classes)
+y_true = np.repeat(np.arange(n_classes), n_samples_per_class)
+
+# Generate prediction labels with realistic confusion patterns
+y_pred = []
+for label in y_true:
+    if label == 1:   # Finance
+        p = np.random.choice([1,4,9], p=[0.82, 0.15, 0.03])  # Economics(4)/Culture(9)
+    elif label == 3: # Health
+        p = np.random.choice([3,5,8], p=[0.85, 0.12, 0.03])  # Sports(5)/Military(8)
+    elif label == 8: # Culture
+        p = np.random.choice([8,9], p=[0.88, 0.12])          # Entertainment(9)
+    else:
+        p = label
+    y_pred.append(p)
+y_pred = np.array(y_pred)
+
+# ==================== Compute Confusion Matrix ====================
+cm = confusion_matrix(y_true, y_pred, normalize='true')
+
+# ==================== Visualization Settings ====================
+plt.figure(figsize=(16, 14), dpi=100)
+ax = plt.gca()
+
+# Create heatmap (diagonal visible)
+heatmap = sns.heatmap(
+    cm,
+    annot=True,
+    fmt=".2f",
+    cmap="Blues",
+    linewidths=0.5,
+    linecolor="lightgray",
+    cbar_kws={'label': 'Classification Rate', 'shrink': 0.8},
+    annot_kws={'size': 12, 'color': 'black'},
+    square=True,
+    vmin=0, vmax=1
+)
+
+# ==================== Advanced Annotations ====================
+# Highlight high-error cells (>10%)
+for i in range(n_classes):
+    for j in range(n_classes):
+        if i != j and cm[i,j] > 0.1:
+            ax.text(j+0.5, i+0.5, 
+                    f'{cm[i,j]:.2f}',
+                    ha='center', va='center',
+                    color='red', fontweight='bold',
+                    bbox=dict(facecolor='white', alpha=0.8, edgecolor='none'))
+
+# Add explanatory legend
+legend_text = ("Key:\n"
+               "• Blue diagonal = Correct classifications\n"
+               "• Red numbers = Cross-class errors >10%\n"
+               "• Data: 400 samples/class\n"
+               "• Row-normalized values")
+plt.figtext(1.02, 0.5, legend_text, 
+           fontsize=12, 
+           verticalalignment='center',
+           bbox=dict(facecolor='whitesmoke', alpha=0.8))
+
+# ==================== Label Formatting ====================
+ax.set_title("Normalized Confusion Matrix Heatmap\n(True Class → Predicted Class)", 
+            fontsize=18, pad=25, fontweight='bold')
+ax.set_xlabel("Predicted Label", fontsize=14, labelpad=15)
+ax.set_ylabel("True Label", fontsize=14, labelpad=15)
+
+# Optimize tick labels
+ax.set_xticks(np.arange(n_classes)+0.5)
+ax.set_xticklabels(classes, 
+                  rotation=45, 
+                  ha='right',
+                  fontsize=12,
+                  fontweight='semibold')
+
+ax.set_yticks(np.arange(n_classes)+0.5)
+ax.set_yticklabels(classes, 
+                  rotation=0, 
+                  fontsize=12,
+                  fontweight='semibold')
+
+# ==================== Output Configuration ====================
+plt.tight_layout(rect=[0, 0, 0.85, 1])  # Space for legend
+plt.savefig(output_filename, dpi=1000, bbox_inches='tight', transparent=True)
+print(f"Heatmap saved to {output_filename}")
+plt.show()

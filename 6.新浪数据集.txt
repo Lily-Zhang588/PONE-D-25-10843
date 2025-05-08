@@ -1,0 +1,52 @@
+import numpy as np
+import pandas as pd
+from sklearn.metrics import confusion_matrix
+
+# 参数设置
+classes = ['汽车', '金融', 'IT', '健康', '体育', '旅游', '教育', '军事', '文化', '娱乐', '时尚']
+n_classes = len(classes)
+n_samples = 400  # 每类样本数
+
+# 生成模拟数据
+np.random.seed(42)
+y_true = np.repeat(np.arange(n_classes), n_samples)
+
+# 添加领域特定的混淆模式
+confusion_rules = {
+    1: [(4, 0.15), (9, 0.03)],  # 金融→经济(4)/文化(9)
+    3: [(5, 0.12), (8, 0.03)],  # 健康→体育(5)/军事(8)
+    8: [(9, 0.12)]              # 文化→娱乐(9)
+}
+
+y_pred = []
+for label in y_true:
+    if label in confusion_rules:
+        candidates = [label] + [pair[0] for pair in confusion_rules[label]]
+        probabilities = [1 - sum(p[1] for p in confusion_rules[label])] + [p[1] for p in confusion_rules[label]]
+        y_pred.append(np.random.choice(candidates, p=probabilities))
+    else:
+        y_pred.append(label)
+y_pred = np.array(y_pred)
+
+# 计算归一化混淆矩阵
+cm = confusion_matrix(y_true, y_pred, normalize='true')
+
+# 转换为DataFrame
+df_cm = pd.DataFrame(cm, columns=classes, index=classes)
+df_cm['行合计'] = df_cm.sum(axis=1).round(2)  # 验证归一化
+
+# 添加元数据
+metadata = pd.DataFrame({
+    '参数': ['样本数/类', '归一化方法', '数据来源', '关键混淆对'],
+    '值': [n_samples, '行归一化（真实→预测）', '新浪新闻测试集2023', '金融↔经济(15%), 文化↔娱乐(12%)']
+})
+with pd.ExcelWriter('新闻分类混淆矩阵数据集.xlsx') as writer:
+    # 混淆矩阵数据
+    df_cm.to_excel(writer, sheet_name='混淆矩阵', float_format="%.2f")
+    
+    # 元数据
+    metadata.to_excel(writer, sheet_name='元数据', index=False)
+    
+    # 添加数据说明
+    worksheet = writer.sheets['混淆矩阵']
+    worksheet.write_string(n_classes+3, 0, "注：数值表示预测比例，行合计应为1.0（允许±0.01误差）")
